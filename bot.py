@@ -12,7 +12,6 @@ from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandl
 
 from dotenv import load_dotenv
 
-#Конфигурация
 load_dotenv()
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
@@ -20,7 +19,6 @@ OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
 if not TELEGRAM_BOT_TOKEN or not OPENWEATHER_API_KEY:
     raise ValueError("Укажите TELEGRAM_BOT_TOKEN и OPENWEATHER_API_KEY в .env")
 
-#Логирование
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
@@ -29,8 +27,6 @@ logger = logging.getLogger(__name__)
 
 USER_DATA_FILE = "user_data.json"
 user_data_storage: Dict[int, dict] = {}
-
-#Утилиты 
 
 def load_persistent_data():
     global user_data_storage
@@ -168,8 +164,6 @@ MAIN_MENU = [["🌤 Погода", "🔁 Сравнить погоду"], ["📊
 def main_menu_markup():
     return ReplyKeyboardMarkup(MAIN_MENU, resize_keyboard=True)
 
-#Обработчики 
-
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data.clear()
     await update.message.reply_text("Привет! Выберите действие:", reply_markup=main_menu_markup())
@@ -221,7 +215,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     state = context.user_data.get("state")
 
-    #Установка города по умолчанию
     if state == "set_default_city":
         if get_weather_now(text):
             set_default_city(user_id, text)
@@ -232,7 +225,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Выберите действие:", reply_markup=main_menu_markup())
         return
 
-    # --- Ввод города вручную ---
     if state == "enter_city":
         data = get_weather_now(text)
         if data:
@@ -241,7 +233,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("❌ Город не найден. Попробуйте снова.")
         return
 
-    #Выбор источника города
     if state == "choose_city_source":
         if text == "← Назад":
             context.user_data.clear()
@@ -264,7 +255,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("Выберите из меню.")
             return
 
-    #Выбор типа погоды
     if state == "choose_weather_type":
         city = context.user_data.get("temp_city")
         if not city:
@@ -321,7 +311,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Выберите действие:", reply_markup=main_menu_markup())
         return
 
-    #Сравнение городов
     if state == "compare_cities":
         cities = text.split()
         if len(cities) != 2:
@@ -343,7 +332,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Выберите действие:", reply_markup=main_menu_markup())
         return
 
-    #Главное меню
     await handle_main_menu(update, context, text)
 
 async def show_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -387,8 +375,6 @@ async def export_csv(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("❓ Используйте меню или /start.")
 
-#Основной обработчик
-
 async def unified_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text.strip()
     if text.startswith("/"):
@@ -398,8 +384,6 @@ async def unified_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await unknown(update, context)
         return
     await handle_message(update, context)
-
-#Запуск
 
 def main():
     load_persistent_data()
